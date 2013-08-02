@@ -17,6 +17,7 @@ First repository post - Changes that I've made to Joe's posted source code inclu
 -Added mirror display routines for right1-inward, left1-inward, left2-facing, and right2-facing relationships.
 -Added a jQuery click function to respond to mirror-portrait clicks.
 -Added door cranking sound.
--Added Xerxes font for dungeon wall inscriptions (not a perfect match)
--Added 5x5_rounded font for interface text (seems a perfect match except line height needs to be suppressed with css line-height).
+-Added Xerxes font for dungeon wall inscriptions (not a perfect match).
+-Added 5x5_rounded font for interface text (matches except line-height needs to be suppressed with css).
 -Added Primitive font for scrolls and scripts (haven't used it anywhere and it doesn't seem to match well)
+-Added Front door view and choice between Enter and Resume with Resume starting at various levels.
