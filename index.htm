@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Dungeon Master</title>
+<link rel="shortcut icon" href="favicon.ico" type="image/x-icon" /> 
+<link rel="icon" href="favicon.ico" type="image/x-icon" /> 
+
+<script type="text/javascript" language="javascript" src="../../scripts/jquery-1.10.2.min.js"></script>
+<script type="text/javascript">
+</script>
+<script type="text/javascript" language="javascript" src="scripts/eventControl.js"></script>
+<script type="text/javascript" language="javascript" src="scripts/door.js"></script>
+<script type="text/javascript" language="javascript" src="scripts/Graphics_Door.js"></script>
+<script type="text/javascript" language="javascript" src="scripts/Map.js"></script>
+<script type="text/javascript" language="javascript" src="scripts/Sound.js"></script>
+
+<script type="text/javascript" language="javascript" src="scripts/Movement.js"></script>
+<script type="text/javascript" language="javascript" src="scripts/GraphicsDisplay.js"></script>
+<link href="styles/main.css" rel="stylesheet"/>
+<script type="text/javascript">
+//location settings
+//0 = north; 1 = east; 2 = south; 3 = west
+		//Start	End1	Start2	End2	Start3
+var curDir = 0;	//0		1	0	0		1
+var curX = 17;	//17	14	4	7		3
+var curY = 17;	//17	3	1	28		31
+var curZ = 1;	//1		1	2	2		3
+//settings
+var vpWidth = 448; //Viewport Width
+var vwHeight = 272;//Viewport Height
+var gfxSet = "";
+var partySpeed = 1;
+var allowmove = true;
+var gameTime = 0;
+var gameTime1_3  = 0;
+var gameTimer = setInterval(function(){	gameTime++; if (gameTime % 3 == 0) {gameTime1_3++;}},600);
+var UPKEY = 87;
+var DOWNKEY = 83;
+var LEFTKEY = 65;
+var RIGHTKEY = 68;
+var L90KEY = 81;
+var R90KEY = 69;
+
+//EO Settings
+function querySt(ji) {
+	hu = window.location.search.substring(1);
+	gy = hu.split("&");
+	for (i=0;i<gy.length;i++) {
+		ft = gy[i].split("=");
+		if (ft[0] == ji) {
+			return ft[1];
+		}
+	}
+}
+
+$(document).ready(function() {
+	if(querySt("i") != undefined || querySt("i") != null && querySt("i") == "true") {
+			$('#infobox').css('display','block');
+	}
+	$('#viewport').css('width',vpWidth);$('#viewport').css('height',vwHeight);
+//	$('#overLay').css('width',vpWidth);$('#overLay').css('height',vwHeight);
+	updateMap();
+	updateViewport()
+	updateCompass();
+	doStep();
+	checkEvent();
+	$("#control").css("display", "none");
+	$("#enterbutton").css("cursor", "pointer");
+	$("#enterbutton").click(function() {
+		$("#startscreen").css("display", "none");
+		startInteraction();
+	});
+	$("#resumebutton").click(function() {
+		$("#startscreen").css("display", "none");
+		$("#resumescreen").css("display", "block");
+	});
+	$(".loadbutton").click(function() {
+		switch($(this).attr("id")) {
+			case "resume1":
+				loadLevel1();
+				curDir = 1;	//0		1	0	0		1
+				curX = 14;	//17	14	4	7		3
+				curY = 3;	//17	3	1	28		31
+				curZ = 1;	//1		1	2	2		3
+				updateViewport();
+				$("#resumescreen").css("display", "none");
+				startInteraction();
+			break;
+			case "resume2":
+				loadLevel2();
+				curDir = 0;
+				curX = 7;
+				curY = 28;
+				curZ = 2;
+				updateViewport();
+				$("#resumescreen").css("display", "none");
+				startInteraction();
+			break;
+			case "resume3":
+				loadLevel3();
+				curDir = 0;
+				curX = 15;
+				curY = 16;
+				curZ = 3;
+				updateViewport();
+				$("#resumescreen").css("display", "none");
+				startInteraction();
+			break;
+			case "resume4":
+				loadLevel4();
+				curDir = 2;
+				curX = 7;
+				curY = 7;
+				curZ = 4;
+				updateViewport();
+				$("#resumescreen").css("display", "none");
+				startInteraction();
+		}
+	});
+});
+
+function startInteraction() {
+	$(document).keydown(function(event) {
+		switch (event.which)
+		{
+			case UPKEY:
+				moveMe('u');
+			break;
+			case DOWNKEY:
+				moveMe('d');
+			break;
+			case LEFTKEY:
+				moveMe('l');
+			break;
+			case RIGHTKEY:
+				moveMe('r');
+			break;
+			case L90KEY:
+				moveMe('l90');
+			break;
+			case R90KEY:
+				moveMe('r90');
+			break;
+		}
+	});
+	$("#control").css('display','block');
+}
+
+function showhidedbg()
+{
+	if ($('#debugwindow').css('display') == 'none')
+	{
+		$('#debugwindow').css('display','block')
+	}
+	else{$('#debugwindow').css('display','none')}
+	
+}
+function showinstructions()
+{
+	if ($('#infobox').css('display') == 'none')
+	{
+		$('#infobox').css('display','block')
+	}
+	else{$('#infobox').css('display','none')}
+}
+</script>
+
+<style type="text/css">
+
+@font-face 
+{
+    font-family: Xerxes;
+    src: url('../../fonts/xerxes.eot');
+    src: url('../../fonts/xerxes.eot?') format('eot'),
+    url('../../fonts/xerxes.ttf') format('truetype');
+}
+
+@font-face 
+{
+    font-family: Fivebyfive;
+    src: url('../../fonts/5x5_rounded.eot');
+    src: url('../../fonts/5x5_rounded.eot?') format('eot'),
+    url('../../fonts/5x5_rounded.ttf') format('truetype');
+}
+
+.floor
+{position:absolute;bottom:0px;background-image:url('floornor.png');width:448px;height:140px;}
+.roof
+{position:absolute;top:0px;background-image:url('roofnor.png');width:448px;height:58px;}
+.wallLside0
+{position:absolute;left:0px;background-image:url('wallLSide0nor.png');width:64px;z-index:400;height:272px;display:none;}
+.wallRside0
+{position:absolute;right:0px;background-image:url('wallRSide0nor.png');width:64px;height:272px;z-index:400;display:none;}
+.wallRside1
+{position:absolute;right:64px;top:18px;background-image:url('wallRSide1nor.png');width:56px;height:222px;z-index:300;display:none;}
+.wallLside1
+{position:absolute;left:64px;top:18px;background-image:url('wallLSide1nor.png');width:56px;height:222px;z-index:300;display:none;}
+.wallRside2
+{position:absolute;right:120px;top:40px;background-image:url('wallRSide2nor.png');width:28px;height:142px;z-index:200;display:none;}
+.wallLside2
+{position:absolute;	left:120px;	top:40px;background-image:url('wallLSide2nor.png');;width:28px;height:142px;z-index:200;display:none;}
+.wallRside3
+{position:absolute;right:148px;top:49px;background-image:url('wallRSide3nor.png');width:22px;height:102px;z-index:100;display:none;}
+.wallLside3
+{position:absolute;left:148px;top:49px;background-image:url('wallLSide3nor.png');width:22px;height:102px;z-index:100;display:none;}
+.stairsFront1_decor
+{position:absolute;left:64px;top:18px;background:url('stairsDownFront1.png') no-repeat;background-size: 100%; width:320px;height:222px;z-index:300;display:none;}
+.wallFront1
+{position:absolute;left:64px;top:18px;background-image:url('wallFront1nor.png');width:320px;height:222px;z-index:300;display:none;}
+.wallSide1_1
+{position:absolute;left:0px;top:18px;background-image:url('wallSide1nor.png');width:64px;height:222px;z-index:300;display:none;}
+.wallSide1_2
+{position:absolute;right:0px;top:18px;background-image:url('wallSide1alt.png');width:64px;height:222px;z-index:300;display:none;}
+.stairsFront2_decor
+{position:absolute;left:120px;top:40px;background:url('stairsDownFront2.png') no-repeat; background-size: 100%;width:208px;height:142px;z-index:200;display:none;}
+.wallFront2
+{position:absolute;left:120px;top:40px;background-image:url('wallFront2nor.png');width:208px;height:142px;z-index:200;display:none;}
+.wallSide2_1
+{position:absolute;left:0px;top:40px;background-image:url('wallSide2nor.png');width:120px;height:142px;z-index:200;display:none;}
+.wallSide2_2
+{position:absolute;right:0px;top:40px;background-image:url('wallSide2alt.png');width:120px;height:142px;z-index:200;display:none;}
+.wallFront3
+{position:absolute;right:148px;top:49px;background-image:url('wallFront3nor.png');width:152px;height:102px;z-index:100;display:none;}
+.wallSide3_1
+{position:absolute;left:0px;top:49px;background-image:url('wallSide3nor.png');width:148px;height:102px;z-index:100;display:none;}
+.wallSide3_2
+{position:absolute;right:0px;top:49px;background-image:url('wallSide3nor.png');width:148px;height:102px;z-index:100;display:none;}
+.wallfrontTEXT{color: #ffffff; font-size: 19px; margin-top:18%; text-align:center;  margin-left:10px; width:300px;
+font-family:Xerxes;}
+
+
+.wallLside0_walldecor
+{position:absolute;left:0px;width:64px;z-index:401;height:272px;display:none;}
+.wallRside0_walldecor
+{position:absolute;right:0px;width:64px;z-index:401;height:272px;display:block;}
+.wallLside1_walldecor
+{position:absolute;left:64px;top:18px;width:56px;height:222px;z-index:301;display:none;}
+.wallRside1_walldecor
+{position:absolute;right:64px;top:18px;width:56px;height:222px;z-index:301;display:none;}
+.wallLside2_1_walldecor
+{position:absolute;left:0px;top:40px;width:120px;height:142px;z-index:200;display:none;}
+.wallRside2_2_walldecor
+{position:absolute;right:0px;top:40px;width:120px;height:142px;z-index:200;display:none;}
+
+.doorFront1
+{position:absolute;left:95px;top:30px;width:320px;height:222px;z-index:301;display:none;background-image:url('doorFront1.png');background-repeat:no-repeat;}
+.doorFront1_inner
+{left:39px;width:181px;height:166px;display:none;position:absolute;top:6px;background-image:url('doorinner_default.png');background-position:bottom;}
+
+.doorFront2
+{position:absolute;left:135px;top:47px;width:175px;height:140px;z-index:201;display:none;background-image:url('doorFront2.png');background-repeat:no-repeat;}
+.doorFront2_inner
+{left:25px;width:125px;height:16px;display:none;position:absolute;top:4px;background-image:url('doorinner_default2.png');background-position:bottom;background-repeat:no-repeat;}
+
+.doorFront1_button
+{position:absolute;right:100px;width:20px;top:80px; height:24px;background-image:url('doorbutton.png');z-index:2001;}
+
+.doorSide1_1
+{position:absolute;left:0px;top:15px;width:64px;height:222px;z-index:301;display:none;background-image:url('doorSide1.png');background-repeat:no-repeat;}
+.doorSide1_1_inner
+{left:0px;width:64px;height:166px;display:none;position:absolute;top:25px;background-image:url('doorinner_default.png');background-position:bottom right;}
+
+.doorSide1_2
+{position:absolute;right:0px;top:15px;width:64px;height:222px;z-index:201;display:none;background-image:url('doorSide1.png');background-repeat:no-repeat;}
+.doorSide1_2_inner
+{left:0px;width:64px;height:166px;display:none;position:absolute;top:25px;background-image:url('doorinner_default.png');background-position:bottom left;}
+
+.doorSide2_1
+{position:absolute;right:328px;top:47px;width:120px;height:140px;z-index:201;display:none;background-image:url('doorFront2.png');background-repeat:no-repeat;background-position:top right;}
+.doorSide2_1_inner
+{right:25px;width:95px;height:16px;display:none;position:absolute;top:4px;background-image:url('doorinner_default2.png');background-position:bottom right;background-repeat:no-repeat;}
+
+
+
+.doorSide2_2
+{position:absolute;left:328px;top:47px;width:120px;height:140px;z-index:201;display:none;background-image:url('doorFront2.png');background-repeat:no-repeat;}
+.doorSide2_2_inner
+{left:25px;width:96px;height:16px;display:none;position:absolute;top:4px;background-image:url('doorinner_default2.png');background-position:bottom left;background-repeat:no-repeat;}
+
+.wallFront2_walldecor
+{position:absolute;left:120px;top:40px;width:208px;height:142px;z-index:201;display:none;}
+
+#infobox{float:right; background-color:#000000;border:solid 2px #00c0c0;color:#00c0c0;display:none;}
+#infobox table {color:#00c0c0 !important;}
+
+#startscreen
+{
+	position: absolute;
+	z-index:1000;
+	width:636px;
+	height:400px;
+	top: 50px;
+	left: 10px;
+}
+
+#resumescreen
+{
+	background: url(resume.png);
+	position: absolute;
+	z-index:1000;
+	width: 448px;
+	height: 272px;
+	top: 150px;
+	left: 20px;
+	display: none;
+	margin-left: 8px;
+	margin-top: 8px
+}
+
+.loadbutton {
+	text-align: center;
+	color: Orange;
+	font-family: Fivebyfive;
+	font-size: 12pt;
+}
+
+.loadbutton:hover {
+	cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div id="infobox">
+<table>
+<tr><td>Up</td><td><span>w</span></td></tr>
+<tr><td>Down</td><td><span>s</span></td></tr>
+<tr><td>Left</td><td><span>a</span></td></tr>
+<tr><td>Right</td><td><span>d</span></td></tr>
+<tr><td>Left 90*</td><td><span>q</span></td></tr>
+<tr><td>Right 90*</td><td><span>e</span></td></tr>
+</table>
+</div>
+<div id="outer" style="display:none;float:right:color:white;font-size:8px;border:solid 1px black; width:400px; height:400px;"></div>
+<div id="startscreen"><img src="frontdoor.png" usemap="#startmap" />
+	<map name="startmap">
+		<area id="enterbutton" href="#" shape="circle" coords="501, 103, 10" alt="Enter" >
+		<area id="resumebutton" href="#" shape="circle" coords="501, 169, 10" alt="Resume" >
+	</map>
+</div>
+<div id="resumescreen" />
+	<div id="resume1" class="loadbutton" style="float: left; margin-left: 26px; margin-top: 130px; width: 183px; height: 41px;">END OF LVL1</div>
+	<div id="resume2" class="loadbutton" style="float: left; margin-left: 31px; margin-top: 130px; width: 182px; height: 41px;">END OF LVL2</div>
+	<div id="resume3" class="loadbutton" style="float: left; margin-left: 26px; margin-top: 33px; width: 183px; height: 41px;">LVL3 CENTRAL</div>
+	<div id="resume4" class="loadbutton" style="float: left; margin-left: 31px; margin-top: 33px; width: 182px; height: 41px;">END OF LVL4</div>
+</div>
+<div id="viewport" >
+<div id="overLay"></div>
+<div class="roof"></div>
+<div class="floor"></div>
+<div class="wallLside0"></div><div class="wallLside0_walldecor"></div>
+<div class="wallLside1"></div><div class="wallLside1_walldecor"></div>
+<div class="wallLside2"></div>
+<div class="wallLside3"></div>
+
+<div class="wallRside0"></div><div class="wallRside0_walldecor"></div>
+<div class="wallRside1"></div><div class="wallRside1_walldecor"></div>
+<div class="wallRside2"></div>
+<div class="wallRside3"></div>
+
+	<div class="wallSide1_1"></div><div class="doorSide1_1"><div class="doorSide1_1_inner"></div></div>
+		<div class="doorSide1_2"><div class="doorSide1_2_inner"></div></div>
+	<div class="stairsFront1_decor"></div>
+	<div class="wallFront1"></div><div class="doorFront1"><div class="doorFront1_inner"></div></div>
+		<div class="doorFront1_button"></div>
+	<div class="wallSide1_2"></div>
+	<div class="wallSide2_1"></div><div class="wallLside2_1_walldecor"></div><div class="doorSide2_1"><div class="doorSide2_1_inner"></div></div>
+	<div class="stairsFront2_decor"></div>
+	<div class="wallFront2"></div><div class="wallFront2_walldecor"></div><div class="doorFront2"><div class="doorFront2_inner"></div></div>
+	<div class="wallSide2_2"></div><div class="wallRside2_2_walldecor"></div><div class="doorSide2_2"><div class="doorSide2_2_inner"></div></div>
+	
+	<div class="wallSide3_1"></div>
+	<div class="wallFront3"></div>
+	<div class="wallSide3_2"></div>
+</div>
+<div id="control" style="">
+	<input type="button"  onclick="alert(curX + ', ' + curY + ', level ' + curZ)" value="Where am i?" />
+<input type="button" value="Debug" style="display:none;" onclick="showhidedbg();"/>
+<input type="button" value="Help"   onclick="showinstructions();"/>
+	<div id="cmp"  style="">N</div>
+<table >
+<tr>
+	<td><img src="images/l90.png" onclick="moveMe(this.getAttribute('dir'))" dir="l90"></td>
+	<td><img src="images/u.png" onclick="moveMe(this.getAttribute('dir'))" dir="u"></td>
+	<td><img src="images/r90.png" onclick="moveMe(this.getAttribute('dir'))" dir="r90"></td>
+</tr>
+<tr>
+	<td><img src="images/l.png" onclick="moveMe(this.getAttribute('dir'))" dir="l"></td>
+	<td><img src="images/d.png" onclick="moveMe(this.getAttribute('dir'))" dir="d"></td>
+	<td><img src="images/r.png" onclick="moveMe(this.getAttribute('dir'))" dir="r"></td>
+</tr>
+</table>
+<div style="font-family: Fivebyfive; font-size: 12pt; color: Lime; line-height: 14px;">Original javascript code</div>
+<div style="font-family: Fivebyfive; font-size: 12pt; color: Lime; line-height: 14px;">by Joe at <a style="color: Yellow; text-decoration: none;" href="http://joesblog.me.uk/dungeon-master-javascript" target="_blank">Joe's Blog</a>.</div>
+</div>
+</div>
+
+<div id="dummyspan"></div>
+
+</body>
+
+</html>

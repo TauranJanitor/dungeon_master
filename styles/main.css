@@ -1,0 +1,50 @@
+body
+{background-color:#000000;font-family:Palatino Linotype, Book Antiqua, Palatino, serif;}
+#debugwindow{font-size:10px;border:ridge 4px #00c0c0;color:#00c0c0; width:300px; height:300px; overflow:scroll;display:none;}
+#control
+{
+	position:absolute; bottom:20px;
+	right:20px;
+	z-index:0;
+}
+#control table {border:solid 2px #00c0c0;}
+#control table td {border:solid 1px #00c0c0;}
+#control table td:active {border:solid 1px #c03600;}
+#cmp
+{
+	margin-top:10px;
+	margin-bottom:10px;
+	margin-left:auto;
+	margin-right:auto;
+	font-family:Palatino Linotype, Book Antiqua, Palatino, serif;
+	background-image:url('../images/compass.png');background-repeat:no-repeat;
+	color:#00c0c0;
+	width:120px;
+	padding-top:47px;
+	height:112px;
+	text-align:center;
+	font-size:18px;
+}
+input[type="button"] {background-color:#000000;border:solid 2px #00c0c0;color:#00c0c0}
+input[type="button"]:active {background-color:#000000;border:solid 2px #c000c0;color:#00c0c0}
+#viewport
+{
+	position:relative;
+	left:20px;
+	top:150px;
+	background-color:black;
+
+	z-index:1;
+}
+
+#shader
+{
+	background-color:black;
+	position:absolute;
+	z-index:1000;
+	opacity:0.6;
+	filter:alpha(opacity=60);
+	width:448px;
+	height:272px;
+	display:none;
+}
