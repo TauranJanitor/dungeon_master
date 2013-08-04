@@ -17,6 +17,7 @@
     </ul>
 </li>
 <li>Character sheet loads for now with rebirth options, but clicking on the rectangle closes character sheet</li>
+<li>Fixed some dependencies in this repository so that fonts and jQuery 1.10.2 are now included</li>
 </ul>
 
 <ul><b>2013.08.02 - First repository post - Changes that I've made to Joe's posted source code include:</b>
