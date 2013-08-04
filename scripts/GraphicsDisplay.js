@@ -235,7 +235,8 @@ function updateDecore(){
 					case 'wallDecor':
 						$('.wallFront1').html(frontface1[x].img1);
 						$(".portrait").click(function() {
-							alert($(this).attr("name"));
+							//alert($(this).attr("name"));
+							$("#character_sheet").css("display", "block");
 						});
 					break;
 				}

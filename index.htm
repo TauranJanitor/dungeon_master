@@ -5,7 +5,7 @@
 <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" /> 
 <link rel="icon" href="favicon.ico" type="image/x-icon" /> 
 
-<script type="text/javascript" language="javascript" src="../../scripts/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" language="javascript" src="scripts/jquery-1.10.2.min.js"></script>
 <script type="text/javascript">
 </script>
 <script type="text/javascript" language="javascript" src="scripts/eventControl.js"></script>
@@ -40,6 +40,11 @@ var LEFTKEY = 65;
 var RIGHTKEY = 68;
 var L90KEY = 81;
 var R90KEY = 69;
+
+HEAD = 0; NECK = 1; RIGHT_HAND = 2; TORSO = 3; LEFT_HAND = 4; RIGHT_POCKET_1 = 5; RIGHT_POCKET_2 = 6; THIGHS = 7;
+LEFT_POCKET_1 = 8; LEFT_POCKET_2 = 9; LEFT_POCKET_3 = 10; LEFT_POCKET_4 = 11; FEET = 12; PACK_01 = 13; PACK_02 = 14; PACK_03 = 15;
+PACK_04 = 16; PACK_05 = 17; PACK_06 = 18; PACK_07 = 19; PACK_08 = 20; PACK_09 = 21; PACK_10 = 22; PACK_11 = 23;
+PACK_12 = 24; PACK_13 = 25; PACK_14 = 26; PACK_15 = 27; PACK_16 = 28; PACK_17 = 29;
 
 //EO Settings
 function querySt(ji) {
@@ -117,6 +122,91 @@ $(document).ready(function() {
 				startInteraction();
 		}
 	});
+
+
+// Character sheet functions
+	function item(name, icon_index) {
+		this.name = name;
+		this.icon_index = icon_index;
+		// eventually need weights and charges and torchlife
+		// should put portrait_index here too
+	}
+
+	function character(first, last) {
+		this.first_name = first;
+		this.last_name = last;
+		this.inventory = new Array(29);
+		this.attributes = new Array(30); // dozens of attributes, guessing 30 for now
+	}
+	
+	Player1 = new character("ZED", "DUKE OF BANVILLE");
+	Player1.inventory[TORSO] = new item("mail_aketon", 0);
+	Player1.inventory[THIGHS] = new item("blue_pants", 40);
+	Player1.inventory[FEET] = new item("hosen", 8);
+
+	function mousecarry(swappable, carried) {
+			currentcarry = carried;						//save currentcarry to test if carrying something
+			carried.detach();							//detach item from home slot
+			$("#limbo").append(carried);				//attach item outside the slot
+			carried.css("pointer-events", "none");		//needed to avoid blocking clicks on swappable below.
+//			$("body").css("cursor", "url(blank.cur)");	//jquery version doesn't work, wrong syntax?
+			document.body.style.cursor = "url(blank.cur),auto";	//but hiding with DOM version works
+			$(document).on("mousemove", function(event) {	//make the item follow the mouse pointer
+				carried.css({"left": event.pageX - 16, "top": event.pageY - 16, "z-index": 9999});
+			});
+	}
+	
+	function mousedrop(swappable, carried) {
+			$(swappable).append(carried);						//attach div into inventory slot
+			carried.css({"left": 0, "top": 0, "z-index": 10});	//re-center the item on its new home
+			$(document).off("mousemove");				//stop this item from following mouse
+			currentcarry = null;						//null out the current carry for testing
+//			$("body").css("cursor", "url(hand.cur)");	//jquery version doesn't work, wrong syntax?
+			document.body.style.cursor = "url(hand.cur), auto";	//but using custom hand cursor works in DOM
+	}
+
+	var currentcarry = null;
+	var clickX;
+	var clickY;
+	//TO DO: Customize cursor with capture from game
+	// Blank out cursor when carrying an item $("#charsheet").css { cursor: url(cursor.png), auto;}
+	// Switch items if dropping on occupied space
+	$(".swappable").click(function() {
+		if (currentcarry) {							//If currently carrying an item, drop it into this clicked square
+			if ($(this).children().length != 0) {	//but check if square is occupied first
+				var tempcarry = $(this).children();	//save occupied item
+				mousedrop(this, currentcarry);		//drop the item as usual
+				mousecarry(this, tempcarry);		//now carry the temporarily saved item
+			}
+			else {
+				mousedrop(this, currentcarry);
+			}
+		}
+		else {
+			mousecarry(this, $(this).children());	//doesn't work when selecting just one child with firstChild or [0]
+		}
+	});
+	
+	loadsheet(Player1);
+	
+	function loadsheet(character) {
+		$("#character_name").html(character.first_name + " " + character.last_name);
+		for (var i = 1; i < 29; i++) {
+			var invslot = i < 10 ? "#inv_0" + i : "#inv_" + i;
+			if (character.inventory[i]) {
+				//alert("found " + character.inventory[i] + " at " + invslot);
+				var xpos = (character.inventory[i].icon_index % 8 ) * -32 + "px";
+				var ypos = " " + Math.floor(character.inventory[i].icon_index / 8) * -32 + "px";
+				$(invslot).html('<div class="pickable" id="' + character.inventory[i].name + '" style="background: url(icons.png) ' + xpos + ypos + '" ></div>');
+			}
+		}
+	}
+	
+	$("#rebirth").click(function() {
+		$("#character_sheet").hide();
+	});
+	
+	
 });
 
 function startInteraction() {
@@ -163,6 +253,8 @@ function showinstructions()
 	}
 	else{$('#infobox').css('display','none')}
 }
+
+
 </script>
 
 <style type="text/css">
@@ -170,17 +262,17 @@ function showinstructions()
 @font-face 
 {
     font-family: Xerxes;
-    src: url('../../fonts/xerxes.eot');
-    src: url('../../fonts/xerxes.eot?') format('eot'),
-    url('../../fonts/xerxes.ttf') format('truetype');
+    src: url('fonts/xerxes.eot');
+    src: url('fonts/xerxes.eot?') format('eot'),
+    url('fonts/xerxes.ttf') format('truetype');
 }
 
 @font-face 
 {
     font-family: Fivebyfive;
-    src: url('../../fonts/5x5_rounded.eot');
-    src: url('../../fonts/5x5_rounded.eot?') format('eot'),
-    url('../../fonts/5x5_rounded.ttf') format('truetype');
+    src: url('fonts/5x5_rounded.eot');
+    src: url('fonts/5x5_rounded.eot?') format('eot'),
+    url('fonts/5x5_rounded.ttf') format('truetype');
 }
 
 .floor
@@ -270,8 +362,6 @@ font-family:Xerxes;}
 .doorSide2_1_inner
 {right:25px;width:95px;height:16px;display:none;position:absolute;top:4px;background-image:url('doorinner_default2.png');background-position:bottom right;background-repeat:no-repeat;}
 
-
-
 .doorSide2_2
 {position:absolute;left:328px;top:47px;width:120px;height:140px;z-index:201;display:none;background-image:url('doorFront2.png');background-repeat:no-repeat;}
 .doorSide2_2_inner
@@ -317,6 +407,86 @@ font-family:Xerxes;}
 .loadbutton:hover {
 	cursor: pointer;
 }
+
+#character_sheet {
+	display: none;
+	width: 448px;
+	height: 272px;
+	background: url(charsheet.png);
+	position: absolute;
+	left: 28px;
+	top: 158px;
+	font-family: Fivebyfive;
+	font-size: 12pt;
+	line-height: 14px;
+	letter-spacing: -1px;
+	cursor: url(hand.cur), auto;
+	z-index: 50;
+}
+
+#character_name {
+	position: absolute;
+	top: 2px;
+	left: 6px;
+	width: 250px;
+	height: 30px;
+	color: Orange;
+}
+
+.clickable {
+	position: absolute;
+	height: 32px;
+	width: 32px;
+//	pointer-events: none;
+}
+
+.swappable {
+}
+
+.pickable {
+	position: absolute;
+	height: 32px;
+	width: 32px;
+}
+
+#eye {left: 24px; top: 26px; background: url(body_parts.png) 0px 0px;}
+#mouth {left: 112px; top: 26px; background: url(body_parts.png) -64px 0px;}
+
+#inv_00 {left: 68px; top: 52px; background: url(body_parts.png) -160px -32px;}
+#inv_01 {left: 12px; top: 66px; background: url(body_parts.png) -160px 0px;}
+#inv_02 {left: 12px; top: 106px; background: url(body_parts.png) -32px -32px;}
+#inv_03 {left: 68px; top: 92px; background: url(body_parts.png) -224px -32px;}
+#inv_04 {left: 124px; top: 106px; background: url(body_parts.png) -96px -32px;}
+#inv_05 {left: 12px; top: 146px; background: url(body_parts.png) -192px 0px;}
+#inv_06 {left: 12px; top: 180px;}
+#inv_07 {left: 68px; top: 132px; background: url(body_parts.png) -32px -64px;}
+#inv_08 {left: 124px; top: 146px; background: url(body_parts.png) -224px 0px;}
+#inv_09 {left: 158px; top: 146px;}
+#inv_10 {left: 124px; top: 180px;}
+#inv_11 {left: 158px; top: 180px;}
+#inv_12 {left: 68px; top: 172px; background: url(body_parts.png) -96px -64px;}
+#inv_13 {left: 166px; top: 32px;}
+#inv_14 {left: 200px; top: 32px;}
+#inv_15 {left: 234px; top: 32px;}
+#inv_16 {left: 268px; top: 32px;}
+#inv_17 {left: 302px; top: 32px;}
+#inv_18 {left: 336px; top: 32px;}
+#inv_19 {left: 370px; top: 32px;}
+#inv_20 {left: 404px; top: 32px;}
+#inv_21 {left: 132px; top: 66px; background: url(body_parts.png) 0px -32px;}
+#inv_22 {left: 166px; top: 66px;}
+#inv_23 {left: 200px; top: 66px;}
+#inv_24 {left: 234px; top: 66px;}
+#inv_25 {left: 268px; top: 66px;}
+#inv_26 {left: 302px; top: 66px;}
+#inv_27 {left: 336px; top: 66px;}
+#inv_28 {left: 370px; top: 66px;}
+#inv_29 {left: 404px; top: 66px;}
+
+.status {position: absolute; left: 206px; top: 105px; width: 232px; height: 146px;}
+#rebirth {background: url(rebirth.png);}
+// End Character Sheet styles
+
 </style>
 </head>
 
@@ -345,6 +515,46 @@ font-family:Xerxes;}
 	<div id="resume3" class="loadbutton" style="float: left; margin-left: 26px; margin-top: 33px; width: 183px; height: 41px;">LVL3 CENTRAL</div>
 	<div id="resume4" class="loadbutton" style="float: left; margin-left: 31px; margin-top: 33px; width: 182px; height: 41px;">END OF LVL4</div>
 </div>
+
+<div id="character_sheet">
+<div id="character_name"></div>
+<div class="clickable" id="eye"></div>
+<div class="clickable" id="mouth"></div>
+<!-- could use jquery loop to put these in after document load-->
+<div class="clickable swappable" id="inv_00"></div>
+<div class="clickable swappable" id="inv_01"></div>
+<div class="clickable swappable" id="inv_02"></div>
+<div class="clickable swappable" id="inv_03"></div>
+<div class="clickable swappable" id="inv_04"></div>
+<div class="clickable swappable" id="inv_05"></div>
+<div class="clickable swappable" id="inv_06"></div>
+<div class="clickable swappable" id="inv_07"></div>
+<div class="clickable swappable" id="inv_08"></div>
+<div class="clickable swappable" id="inv_09"></div>
+<div class="clickable swappable" id="inv_10"></div>
+<div class="clickable swappable" id="inv_11"></div>
+<div class="clickable swappable" id="inv_12"></div>
+<div class="clickable swappable" id="inv_13"></div>
+<div class="clickable swappable" id="inv_14"></div>
+<div class="clickable swappable" id="inv_15"></div>
+<div class="clickable swappable" id="inv_16"></div>
+<div class="clickable swappable" id="inv_17"></div>
+<div class="clickable swappable" id="inv_18"></div>
+<div class="clickable swappable" id="inv_19"></div>
+<div class="clickable swappable" id="inv_20"></div>
+<div class="clickable swappable" id="inv_21"></div>
+<div class="clickable swappable" id="inv_22"></div>
+<div class="clickable swappable" id="inv_23"></div>
+<div class="clickable swappable" id="inv_24"></div>
+<div class="clickable swappable" id="inv_25"></div>
+<div class="clickable swappable" id="inv_26"></div>
+<div class="clickable swappable" id="inv_27"></div>
+<div class="clickable swappable" id="inv_28"></div>
+<div class="clickable swappable" id="inv_29"></div>
+<div class="status" id="rebirth"></div>
+</div><!-- end character_sheet -->
+<div id="limbo"></div>
+
 <div id="viewport" >
 <div id="overLay"></div>
 <div class="roof"></div>
