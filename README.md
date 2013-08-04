@@ -6,7 +6,7 @@
 <div>Some of the Atari ST dungeon.dat extracts were used as secondary reference. <a href="http://greatstone.free.fr/dm/index.html">http://greatstone.free.fr/dm/index.html</a></div>
 <div>Map reference was from amigames. <a href="http://amigames.magicdomain.dk/text/d/dungeon_master.html">http://amigames.magicdomain.dk/text/d/dungeon_master.html</a></div>
 
-<ul>2013.08.02 - First repository post - Changes that I've made to Joe's posted source code include:
+<ul><b>2013.08.02 - First repository post - Changes that I've made to Joe's posted source code include:</b>
 <li>Changed graphics assets so that a brighter shade of grey is displayed. Captured from Paul Stevens' Windows port.</li>
 <li>Typed in five levels of the maze using Joe's data format.</li>
 <li>Added staircase display functions and graphics for stair-up, stair-down, and stairs 2 blocks away (3 blocks away, 0 blocks away, and diagonal views not included yet).</li>
