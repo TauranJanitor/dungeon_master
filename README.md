@@ -6,7 +6,12 @@
 <div>Some of the Atari ST dungeon.dat extracts were used as secondary reference. <a href="http://greatstone.free.fr/dm/index.html">http://greatstone.free.fr/dm/index.html</a></div>
 <div>Map reference was from amigames. <a href="http://amigames.magicdomain.dk/text/d/dungeon_master.html">http://amigames.magicdomain.dk/text/d/dungeon_master.html</a></div>
 
-<ul><b>2013.08.04 - Character Sheet</b>
+<ul><b>2013.08.04PM - Map Editor</b>
+<li>Added a very rudimentary map editor that allows painting three squares, walls, halls, and doors.</li>
+<li>Downloads to a separate window where the javascript variable can be copy-pasted into code.</li>
+</ul>
+
+<ul><b>2013.08.04AM - Character Sheet</b>
 <li>Added character sheet that pops when portrait clicked.</li>
 <li>Started character object and item object - incomplete definition.</li>
 <li>Started function to load character</li>
