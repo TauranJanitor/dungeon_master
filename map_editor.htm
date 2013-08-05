@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Dungeon Master - Map Editor</title>
+
+<link rel="shortcut icon" href="favicon.ico" type="image/x-icon" /> 
+<link rel="icon" href="favicon.ico" type="image/x-icon" /> 
+<script type="text/javascript" src="scripts/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="scripts/jquery-ui-1.10.3.deluxe.min.js"></script>
+<style type="text/css">
+#console {
+	width: 850px;
+	height: 550px;
+}
+
+#toolbox {
+	width: 180px;
+	height: 680px;
+	float: left;
+	margin-left: 24px;
+}
+
+#curtile {
+	width: 18px;
+	height: 18px;
+	border: solid 1px Lime;
+	display: inline-block;
+}
+
+.tile {
+	width: 15px;
+	height: 15px;
+	border-top: 1px solid Lime;
+	border-left: 1px solid Lime;
+	float: left;
+}
+
+.tile img {
+	width: 16px;
+	height: 16px;
+}
+
+.newtile {
+	width: 16px;
+	height: 16px;
+}
+
+.prototype {
+	width: 16px;
+	height: 16px;
+	border: 1px solid Lime;
+	float: left;
+}
+
+#buttonbox {
+	float: left;
+	width: 180px;
+	height: 60px;
+}
+
+#leftarea {
+	width: 512px;
+	height: 512px;
+	float: left;
+}
+</style>
+<script type="text/javascript">
+$(document).ready(function () {
+// Code for the map editor
+	// Constants
+	var MAPWIDTH = 32;
+	var MAPHEIGHT = 32;
+	var TILESIZE = 16;
+	var SHEETCOLS = 3;
+
+	// Globals	
+	var upleft = 0; //18 * MAPWIDTH + 16;
+	var newesttile = 0; //used for new IDs for dragged tiles
+	var map = new Array(MAPWIDTH * MAPHEIGHT);
+	var map = new Array();
+	for (var i = 0; i < MAPWIDTH * MAPHEIGHT; i++) {
+	    map[i] = "";
+		if (i < MAPWIDTH || i > MAPWIDTH * (MAPHEIGHT - 1) || i % MAPWIDTH == 0 || i % MAPWIDTH == MAPWIDTH - 1) {
+			map[i] = "wall0";
+		}
+	}
+	
+	// Tile name array
+	var tileraw = "wall0,emty1,door2";
+	var tiletypes = tileraw.split(",");
+	var tilestyle = 'style="background: url(images/tiles.png)';
+	var origin;	//the parent where a drag started
+
+	// Load tiles into palette
+	for (var i = 0; i < tiletypes.length; i++) {
+		$("#tilebox").append(
+			BuildTileDiv(tiletypes[i]) + BuildTileImg(tiletypes[i]) + '</div>'
+		);
+	}
+
+	function BuildTileDiv(model) {
+		var type = model.substring(0, 4);
+		var index = model.substring(4) * 1;
+		var xpos = " -" + index % 10 * TILESIZE + "px";
+		var ypos = " -" + Math.floor(index / 10) * TILESIZE + "px";
+		return '<div id="tile' + model + '" class="prototype ' + type + '" ' + tilestyle + xpos + ypos + '">';
+	}
+
+	function BuildTileImg(model) {
+		var type = model.substring(0, 4);
+		var index = model.substring(4) * 1;
+		var xpos = " -" + index % SHEETCOLS * TILESIZE + "px";
+		var ypos = " -" + Math.floor(index / SHEETCOLS) * TILESIZE + "px";
+		newesttile++;
+		return '<div id="new' + newesttile + '" name="' + model + '" class="newtile" ' + tilestyle + xpos + ypos + '"></div>';
+	}
+	// Make the map grid	
+	MakeMapArea();
+	function MakeMapArea() {
+		for (var i = 0; i < MAPWIDTH * MAPHEIGHT; i++) {
+			$("#maparea").append('<div class="tile citygrid" id="tile' + i + '"></div>');	
+		}
+		//attach click-fill
+		$(".citygrid").click(function() {
+			var model = $("#curtile").attr("name");
+			if (model != "blank") {
+				$(this).html(BuildTileImg(model));
+				BindOneDraggable();
+				UpdateMap();
+			}
+		});
+	}
+
+	RefreshMap();
+	function RefreshMap() {
+		for (var i = 0; i < MAPHEIGHT; i++) {
+			for (var j = 0; j < MAPWIDTH; j++) {
+				var tile = j + i * MAPWIDTH;
+				if (map[tile] != "") {
+					$("#tile" + tile).html(BuildTileImg(map[tile]));
+				}
+				else {
+					//clear tile
+					$("#tile" + tile).html("");
+					
+					//attach click-fill
+					$("#tile" + tile).click(function() {
+						var model = $("#curtile").attr("name");
+						if (model != "blank") {
+							$(this).html(BuildTileImg(model));
+							BindOneDraggable();
+							UpdateMap();
+						}
+					});
+				}
+			}
+		}
+		BindDraggables();
+	}	
+	
+
+	// Activate draggables
+	BindDraggables();
+
+	function BindDraggables() {
+		$(".newtile").draggable({
+			start: function (event, ui) {
+				origin = $(this).parent();
+				$(this).hide();             
+				var model = $(this).attr("name");
+				$(this).css("z-index", 3);
+				$("#curtile").html(BuildTileImg(model));
+				$("#curtile").attr("name", model);
+			},
+			helper: 'clone',
+			stop: function() {
+				$(this).show();
+			},
+			snap: ".citygrid",
+			snapMode: "inner",
+			revert: "invalid"
+		}).click(function() {
+			if ($(this).is(".ui.draggable-dragging")) {
+				return;
+			}
+			parent = $(this).parent();
+			if (!isNaN(parent.attr("id").substring(4))) {	//if this is on grid
+				$(this).detach().remove();			//remove clicked tile
+				UpdateMap();
+				parent.click(function () {		//allow for click-painting
+					var model = $("#curtile").attr("name");
+					if (model != "blank") {
+						$(this).html(BuildTileImg(model));
+						BindOneDraggable();
+						UpdateMap();
+					}
+				});
+			}
+			else {	// not on grid = in tilebox; click makes this the paintbrush
+				var model = $(this).attr("name");
+				$("#curtile").html(BuildTileImg(model));
+				$("#curtile").attr("name", model);
+			}
+		});
+	}
+	
+	function BindOneDraggable() {
+		$("#new" + newesttile).draggable({
+			start: function (event, ui) {
+				origin = $(this).parent();
+				$(this).hide();
+				var model = $(this).attr("name");
+				$(this).css("z-index", 3);
+				$("#curtile").html(BuildTileImg(model));
+				$("#curtile").attr("name", model);
+			},
+			helper: 'clone',
+			stop: function() {
+				$(this).show();
+			},
+			snap: ".citygrid",
+			snapMode: "inner",
+			revert: "invalid"
+		}).click(function() {
+			if ($(this).is(".ui.draggable-dragging")) {
+				return;
+			}
+			parent = $(this).parent();
+			if (!isNaN(parent.attr("id").substring(4,6))) {	//if this is on grid
+				$(this).remove();			//remove clicked tile
+				UpdateMap();
+				parent.click(function () {		//allow for click-painting
+					var model = $("#curtile").attr("name");
+					if (model != "blank") {
+						$(this).html(BuildTileImg(model));
+						BindOneDraggable();
+						UpdateMap();
+					}
+				});
+			}
+			else {	// not on grid = in tilebox; click makes this the paintbrush
+				var model = $(this).attr("name");
+				$("#curtile").html(BuildTileImg(model));
+				$("#curtile").attr("name", model);
+			}
+		});
+	}
+
+	$(".citygrid").droppable({
+		drop: function (event, ui) {
+			if ($(this).children().size() < 1) {
+				var model = ui.draggable.attr("name");
+				ui.draggable.detach().css({left: 0, top: 0, 'z-index': 0}).appendTo(this);
+				if (!isNaN(origin.attr("id").substring(4))) {
+					origin.click(function () {
+						var model = $("#curtile").attr("name");
+						if (model != "blank") {
+							$(this).html(BuildTileImg(model));
+							BindOneDraggable();
+							UpdateMap();
+						}
+					});
+				}
+				UpdateMap();
+				if (origin.attr("id").length > 8) {
+					origin.html(BuildTileImg(model));
+					BindOneDraggable();
+				}
+			}
+			else {
+				ui.draggable.draggable('option','revert',true);
+			}
+		}
+	});
+
+	// Update map in memory and save or load it	
+	function UpdateMap() {
+		for (var i = 0; i < MAPHEIGHT; i++) {
+			for (var j = 0; j < MAPWIDTH; j++) {
+				var tile = i * MAPWIDTH + j;
+				var imgalt = $("#tile" + tile).find("div").attr("name");
+				if (imgalt == undefined) imgalt = "";
+				map[tile] = imgalt;
+			}
+		}
+		console.log(map);
+	}		
+	
+	$("#savemap").click(function () {
+		savemap();
+	});
+	
+	$("#loadmap").click(function () {
+		loadmap();
+	});
+	
+	function savemap() {
+		var strTiles = map[0];
+		for (var i = 1; i < MAPWIDTH * MAPHEIGHT; i++) {
+			strTiles += "," + map[i];
+		}
+		$.ajax({
+			type: "POST",
+			url: "map.php",
+			data: {"action": "save", "strTiles": strTiles}
+		}).done(function (result) {
+			alert(result);
+		});
+	}
+	
+	$("#eraser").click(function() {
+		$("#curtile").attr("name", "blank");
+		$("#curtile").html("");
+	});
+	
+	$("#download").click(function() {
+		var mapout = 'map = [<br/>';
+		for (var i = 0; i < MAPHEIGHT; i++) {
+			mapout += '"';
+			for (var j = 0; j < MAPWIDTH; j++) {
+				var square = map[i * MAPWIDTH + j];
+				if (square == "") mapout += "0";
+				else if (square == "wall0") mapout += "1";
+				else if (square == "emty1") mapout += "0";
+				else if (square == "door2") mapout += "2";
+			}
+			mapout += '"';
+			if (i < MAPHEIGHT - 1) mapout += ',<br/>';
+		}
+		mapout += '];';
+		var download = window.open();
+		download.document.writeln('<div style="font-family: courier" >' + mapout + '</div>');
+	});
+
+// End Map Section
+});
+</script>
+</head>
+<body>
+<div id="console">
+	<div id="leftarea">
+	<div id="maparea">
+	</div><!-- end maparea -->
+	</div>
+	<div id="toolbox">
+		<div id="buttonbox">
+			<img class="citygrid" src="images/tools/recycle.png" alt="Recycle" title="Drag Tile Here to Discard It" />
+			<img id="download" class="toolbutton" src="images/tools/download.png" alt="Download" title="Download Map" />
+			<img id="eraser" class="toolbutton" src="images/tools/eraser.png" alt="Eraser" title="Eraser" />
+		</div><!-- buttonbox -->
+		<div id="tilebox">
+		</div><!-- end tilebox -->		<div style="width: 120px; float: left; height: 50px;">
+		<br/>Current Tile: <div id="curtile" name="blank"></div>
+		</div><!-- end unnamed div -->
+
+<!--		<img id="loadmap" class="toolbutton" src="images/tools/open.png" alt="Open" title="Load Last Saved Map" /><br />-->
+	</div><!-- end toolbox -->
+</div><!-- end console -->
+</body>
+</html>
