@@ -6,6 +6,7 @@
 <div>Some of the Atari ST dungeon.dat extracts were used as secondary reference. <a href="http://greatstone.free.fr/dm/index.html">http://greatstone.free.fr/dm/index.html</a></div>
 <div>Map reference was from amigames. <a href="http://amigames.magicdomain.dk/text/d/dungeon_master.html">http://amigames.magicdomain.dk/text/d/dungeon_master.html</a></div>
 <div>-Ernest Hong</div>
+<div>&nbsp;</div>
 
 <ul><b>2013.08.04PM - Map Editor</b>
 <li>Added a very rudimentary map editor that allows painting three squares: walls, halls, and doors.</li>
